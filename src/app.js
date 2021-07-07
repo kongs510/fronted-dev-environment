@@ -1,1 +1,2 @@
-console.log("hello");
+// app.js
+console.log("hello world");
