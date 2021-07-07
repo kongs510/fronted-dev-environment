@@ -1,20 +1,15 @@
-class MyPlugin {
-    apply(compiler) {
-      compiler.plugin('emit', (compilation, callback) => {
-        const source = compilation.assets['main.js'].source();
-        compilation.assets['main.js'].source = () => {
-          const banner = [
-            '/**',
-            ' * 이것은 BannerPlugin이 처리한 결과입니다.',
-            ' * Build Date: 2021-07-06',
-            ' */'
-            
-          ].join('\n');
-          return banner + '\n' + source;
+// myplugin.js:
+module.exports = function myplugin() {
+  return {
+    visitor: {
+      // https://github.com/babel/babel/blob/master/packages/babel-plugin-transform-block-scoping/src/index.js#L26
+      VariableDeclaration(path) {
+        console.log("VariableDeclaration() kind:", path.node.kind) // const
+
+        if (path.node.kind === "const") {
+          path.node.kind = "var"
         }
-  
-        callback();
-      })
-    }
+      },
+    },
   }
-  module.exports = MyPlugin
+}
