@@ -1,21 +1,37 @@
-const path = require("path")
-const MyPlugin = require("./myplugin")
-const webpack = require('webpack');
-const banner = require("./banner.js")
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const { CleanWebpackPlugin } = require("clean-webpack-plugin")
-const MiniCssExtractPlugin = require("mini-css-extract-plugin")
-
+const path = require("path");
+const webpack = require("webpack");
+const HtmlWebpackPlugin = require("html-webpack-plugin");
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const banner = require("./banner.js");
+const MyPlugin = require("./myplugin");
+const apiMocker = require("connect-api-mocker")
 
 module.exports = {
   mode: "development",
   entry: {
-    main: "./src/app.js",
+    main: "./src/app.js"
   },
   output: {
     filename: "[name].js",
-    path: path.resolve("./dist"),
+    path: path.resolve("./dist")
   },
+  devServer: {
+    hot: true,
+    contentBase: path.join(__dirname, "dist"),
+    publicPath: "/",
+    overlay: true,
+    port: 8081,
+    stats: "errors-only",
+    historyApiFallback: true,
+    proxy: {
+      "/api": "http://localhost:8081", // 프록시
+    },
+    before: (app, server, compiler) => {
+      app.use(apiMocker("/api", "mocks/api"))
+    }
+  },
+
   plugins: [
     // new webpack.BannerPlugin(banner)
     // new webpack.DefinePlugin({})
@@ -31,16 +47,19 @@ module.exports = {
     //     env: process.env.NODE_ENV === 'development' ? '(개발용)' : '',
     //   },})
     new HtmlWebpackPlugin({
-      minify: process.env.NODE_ENV === 'production' ? {
-        collapseWhitespace: true, // 빈칸 제거
-        removeComments: true, // 주석 제거
-      } : false,
-      hash: true, // 정적 파일을 불러올때 쿼리문자열에 웹팩 해쉬값을 추가한다
+      minify:
+        process.env.NODE_ENV === "production"
+          ? {
+              collapseWhitespace: true, // 빈칸 제거
+              removeComments: true // 주석 제거
+            }
+          : false,
+      hash: true // 정적 파일을 불러올때 쿼리문자열에 웹팩 해쉬값을 추가한다
     }),
     new CleanWebpackPlugin(),
     ...(process.env.NODE_ENV === "production"
-    ? [new MiniCssExtractPlugin({ filename: `[name].css` })]
-    : []),
+      ? [new MiniCssExtractPlugin({ filename: `[name].css` })]
+      : [])
   ],
   module: {
     rules: [
@@ -50,21 +69,22 @@ module.exports = {
           process.env.NODE_ENV === "production"
             ? MiniCssExtractPlugin.loader // 프로덕션 환경
             : "style-loader", // 개발 환경
-          "css-loader",
-        ],
-      },{
+          "css-loader"
+        ]
+      },
+      {
         test: /\.png$/, // .png 확장자로 마치는 모든 파일
         loader: "file-loader", // 파일 로더를 적용한다
         options: {
           publicPath: "./dist/", // prefix를 아웃풋 경로로 지정
-          name: "[name].[ext]?[hash]", // 파일명 형식
-        },
+          name: "[name].[ext]?[hash]" // 파일명 형식
+        }
       },
       {
         test: /\.js$/,
         exclude: /node_modules/,
-        loader: "babel-loader", // 바벨 로더를 추가한다
-      },
-    ],
+        loader: "babel-loader" // 바벨 로더를 추가한다
+      }
+    ]
   }
-}
+};
